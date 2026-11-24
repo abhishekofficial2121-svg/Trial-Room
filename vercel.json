@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "builds": [
+    { "src": "apps/demo-store/package.json", "use": "@vercel/nextjs" }
+  ],
+  "routes": [
+    { "src": "/api/(.*)", "dest": "apps/demo-store/pages/api/$1" },
+    { "src": "/(.*)", "dest": "apps/demo-store/pages/$1" }
+  ],
+  "env": {
+    "NEXT_PUBLIC_API_URL": "/api",
+    "NEXT_PUBLIC_MERCHANT_ID": "merchant_demo",
+    "MOCK_MODE": "true",
+    "TRYON_PROVIDER": "mock"
+  }
+}
