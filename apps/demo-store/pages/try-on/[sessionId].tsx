@@ -338,7 +338,7 @@ export default function TryOnFlow() {
             <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200">
               <h3 className="text-sm font-semibold text-gray-500 uppercase mb-4">Your Try-On Result</h3>
               <div className="aspect-[2/3] bg-white rounded-xl overflow-hidden border border-gray-200 shadow-inner">
-                <img src={`/api/jobs/${sessionId}/result`} alt="Try-on result" className="w-full h-full object-cover" />
+                <img src={`/api/jobs/${job?.job_id || sessionId}/result`} alt="Try-on result" className="w-full h-full object-cover" />
               </div>
               <div className="mt-4 text-xs text-gray-400 text-center">
                 AI-generated visualization • Front view • Demo mode
