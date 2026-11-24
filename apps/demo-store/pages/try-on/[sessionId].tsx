@@ -325,69 +325,112 @@ export default function TryOnFlow() {
     );
   }
   if (step === "result") {
+    const productId = router.query.productId as string;
+    const productName = decodeURIComponent(router.query.productName as string);
+    const productColor = router.query.productColor as string;
+    const productImage = decodeURIComponent(router.query.productImage as string);
+
+    const productImages: Record<string, string> = {
+      product_001: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800&h=1000&fit=crop",
+      product_002: "https://images.unsplash.com/photo-1596755094514-f87e3b47b1a4?w=800&h=1000&fit=crop",
+      product_003: "https://images.unsplash.com/photo-1585573704707-27222513e49a?w=800&h=1000&fit=crop",
+    };
+
+    const garmentImage = productImage || productImages[productId] || productImages.product_001;
+
     return (
       <div className="min-h-screen bg-gray-50 p-4">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           <nav className="mb-6 flex items-center gap-2">
             <button onClick={handleChangePhoto} className="text-gray-400 hover:text-gray-600 text-sm">
               ← Change Photograph
             </button>
           </nav>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200">
-              <h3 className="text-sm font-semibold text-gray-500 uppercase mb-4">Your Try-On Result</h3>
-              <div className="aspect-[2/3] bg-white rounded-xl overflow-hidden border border-gray-200 shadow-inner">
-                <img src={`/api/jobs/${job?.job_id || sessionId}/result`} alt="Try-on result" className="w-full h-full object-cover" />
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold mb-2">
+              <span className="relative flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-blue-600"></span></span>
+              Demo Mode — Simulated Try-On
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">You Wearing {productName}</h2>
+            <p className="text-gray-600 max-w-md mx-auto">
+              Your photograph combined with the selected garment. This is a simulated visualization
+              for demonstration purposes.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Uploaded photograph */}
+            <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200 flex flex-col">
+              <h3 className="text-sm font-semibold text-gray-500 uppercase mb-4">Your Photograph</h3>
+              <div className="aspect-[3/4] bg-gray-100 rounded-xl overflow-hidden border border-gray-200 flex items-center justify-center mx-auto">
+                {previewUrl ? (
+                  <img src={previewUrl} alt="Your uploaded photograph" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="h-64 w-full flex items-center justify-center">
+                    <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                    </svg>
+                  </div>
+                )}
               </div>
               <div className="mt-4 text-xs text-gray-400 text-center">
-                AI-generated visualization • Front view • Demo mode
+                Uploaded image • Temporary • Deleted after session
               </div>
             </div>
 
-            <div className="space-y-6">
-              <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200">
-                <h3 className="text-sm font-semibold text-gray-500 uppercase mb-4">Product Reference</h3>
-                <div className="flex items-center gap-4">
-                  <div className="h-20 w-20 bg-gray-200 rounded-lg flex items-center justify-center">
-                    <span className="text-gray-400 text-xs">Garment</span>
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-gray-900">Black Oversized T-Shirt</h4>
-                    <p className="text-sm text-gray-500">T-Shirt • Black</p>
-                  </div>
-                </div>
+            {/* Product / try-on result */}
+            <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200 flex flex-col">
+              <h3 className="text-sm font-semibold text-gray-500 uppercase mb-4">Garment You’re Wearing</h3>
+              <div className="aspect-[3/4] bg-white rounded-xl overflow-hidden border border-gray-200 shadow-inner flex items-center justify-center mx-auto">
+                <img
+                  src={garmentImage}
+                  alt={productName}
+                  className="w-full h-full object-cover"
+                  loading="eager"
+                />
               </div>
-
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-                <h3 className="text-sm font-semibold text-blue-800 mb-2">Important</h3>
-                <p className="text-sm text-blue-700 mb-3">
-                  This is an AI-generated visualization, not a guarantee of fit, sizing,
-                  comfort, or physical appearance under all lighting conditions.
-                </p>
+              <div className="mt-4">
+                <h4 className="font-semibold text-gray-900">{productName}</h4>
+                <p className="text-sm text-gray-500">{productColor} • Front view</p>
               </div>
-
-              <div className="space-y-3">
-                <button
-                  onClick={handleChangePhoto}
-                  className="w-full py-3 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition"
-                >
-                  Change Photograph
-                </button>
-                <button
-                  onClick={handleTryAnother}
-                  className="w-full py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition"
-                >
-                  Try Another Product
-                </button>
-                <button
-                  onClick={handleClose}
-                  className="w-full py-3 text-gray-600 font-medium hover:text-gray-800 transition"
-                >
-                  Close Trial Room
-                </button>
+              <div className="mt-4 text-xs text-gray-400 text-center">
+                AI-simulated placement • Demo visualization
               </div>
             </div>
+          </div>
+
+          <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
+            <h3 className="text-sm font-semibold text-blue-800 mb-2">How It Works</h3>
+            <p className="text-sm text-blue-700 mb-4">
+              In production, Trial Room runs a real AI virtual try-on model that blends your
+              photograph with the selected garment. This demo simulates the result for founder
+              demonstration purposes.
+            </p>
+            <p className="text-xs text-blue-600">
+              Your photograph is temporary — deleted after session expiry (30 minutes).
+            </p>
+          </div>
+
+          <div className="mt-8 space-y-3">
+            <button
+              onClick={handleChangePhoto}
+              className="w-full py-3 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition"
+            >
+              Change Photograph
+            </button>
+            <button
+              onClick={handleTryAnother}
+              className="w-full py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition"
+            >
+              Try Another Product
+            </button>
+            <button
+              onClick={handleClose}
+              className="w-full py-3 text-gray-600 font-medium hover:text-gray-800 transition"
+            >
+              Close Trial Room
+            </button>
           </div>
         </div>
       </div>

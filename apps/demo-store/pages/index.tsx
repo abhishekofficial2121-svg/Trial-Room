@@ -8,7 +8,7 @@ const products = [
     subcategory: "tshirt",
     color: "black",
     price: 29.99,
-    image: "https://placehold.co/600x800/000000/ffffff?text=Black+Oversized+T-Shirt",
+    image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=600&h=800&fit=crop",
   },
   {
     id: "product_002",
@@ -17,7 +17,7 @@ const products = [
     subcategory: "shirt",
     color: "white",
     price: 49.99,
-    image: "https://placehold.co/600x800/ffffff/000000?text=White+Button-Down+Shirt",
+    image: "https://images.unsplash.com/photo-1596755094514-f87e3b47b1a4?w=600&h=800&fit=crop",
   },
   {
     id: "product_003",
@@ -26,7 +26,7 @@ const products = [
     subcategory: "tshirt",
     color: "navy",
     price: 34.99,
-    image: "https://placehold.co/600x800/000080/ffffff?text=Navy+Striped+T-Shirt",
+    image: "https://images.unsplash.com/photo-1585573704707-27222513e49a?w=600&h=800&fit=crop",
   },
 ];
 
