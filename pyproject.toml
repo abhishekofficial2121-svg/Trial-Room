@@ -23,7 +23,7 @@ dependencies = [
     "Pillow>=10.0.0,<11.0.0",
     "opencv-python-headless>=4.8.0,<5.0.0",
     "numpy>=1.24.0,<2.0.0",
-    "media-pipe>=0.10.0",  # placeholder; adjust after model selection
+    # "media-pipe>=0.10.0",  # placeholder; adjust after model selection — not used in demo
     "loguru>=0.7.0,<1.0.0",
     "pytest>=7.4.0,<8.0.0",
     "pytest-asyncio>=0.21.0,<1.0.0",
@@ -44,3 +44,6 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["apps/api*", "packages*", "services*"]
+
+[tool.vercel]
+entrypoint = "apps.api.main:app"
