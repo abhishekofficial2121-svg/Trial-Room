@@ -7,7 +7,9 @@
     },
     "demo-store": {
       "root": "apps/demo-store",
-      "framework": "nextjs"
+      "framework": "nextjs",
+      "use": "@vercel/nextjs",
+      "outputDirectory": ".next"
     }
   },
   "rewrites": [
