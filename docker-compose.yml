@@ -1,0 +1,219 @@
+version: "3.9"
+
+services:
+  # ---------------------------------------------------------------
+  # Database: PostgreSQL (session, job, merchant, product metadata only)
+  # ---------------------------------------------------------------
+  db:
+    image: postgres:15-alpine
+    container_name: trialroom-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - trialroom
+
+  # ---------------------------------------------------------------
+  # Cache / Queue: Redis (Celery broker, idempotency, short-lived cache)
+  # ---------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: trialroom-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - trialroom
+
+  # ---------------------------------------------------------------
+  # Object Storage: MinIO (S3-compatible, private, local dev)
+  # ---------------------------------------------------------------
+  minio:
+    image: minio/minio:latest
+    container_name: trialroom-minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: ${AWS_ACCESS_KEY_ID}
+      MINIO_ROOT_PASSWORD: ${AWS_SECRET_ACCESS_KEY}
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - trialroom
+
+  # ---------------------------------------------------------------
+  # API: FastAPI (Python)
+  # ---------------------------------------------------------------
+  api:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/api/Dockerfile
+    container_name: trialroom-api
+    ports:
+      - "8000:8000"
+    environment:
+      - APP_ENV=${APP_ENV}
+      - APP_DEBUG=${APP_DEBUG}
+      - LOG_LEVEL=${LOG_LEVEL}
+      - API_HOST=${API_HOST}
+      - API_PORT=${API_PORT}
+      - API_PREFIX=${API_PREFIX}
+      - CORS_ORIGINS=${CORS_ORIGINS}
+      - SESSION_SECRET_KEY=${SESSION_SECRET_KEY}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - STORAGE_BUCKET=${STORAGE_BUCKET}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - STORAGE_ENDPOINT=${STORAGE_ENDPOINT}
+      - STORAGE_REGION=${STORAGE_REGION}
+      - STORAGE_USE_SSL=${STORAGE_USE_SSL}
+      - TRYON_PROVIDER=${TRYON_PROVIDER}
+      - TRYON_MODEL_ID=${TRYON_MODEL_ID}
+      - TRYON_DEVICE=${TRYON_DEVICE}
+      - SESSION_TTL_MINUTES=${SESSION_TTL_MINUTES}
+      - MAX_ASSET_LIFETIME_MINUTES=${MAX_ASSET_LIFETIME_MINUTES}
+      - MOCK_MODE=${MOCK_MODE}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    command: >
+      sh -c "python -m alembic upgrade head && uvicorn apps.api.main:app --host 0.0.0.0 --port ${API_PORT:-8000} --reload"
+    volumes:
+      - ./apps:/app/apps
+      - ./packages:/app/packages
+      - ./services:/app/services
+    networks:
+      - trialroom
+
+  # ---------------------------------------------------------------
+  # Worker: Celery (validation CPU + try-on GPU inference)
+  # ---------------------------------------------------------------
+  worker:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/api/Dockerfile
+    container_name: trialroom-worker
+    environment:
+      - APP_ENV=${APP_ENV}
+      - LOG_LEVEL=${LOG_LEVEL}
+      - DATABASE_URL=${DATABASE_URL}
+      - CELERY_BROKER_URL=${CELERY_BROKER_URL}
+      - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - STORAGE_BUCKET=${STORAGE_BUCKET}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - STORAGE_ENDPOINT=${STORAGE_ENDPOINT}
+      - STORAGE_REGION=${STORAGE_REGION}
+      - STORAGE_USE_SSL=${STORAGE_USE_SSL}
+      - TRYON_PROVIDER=${TRYON_PROVIDER}
+      - TRYON_MODEL_ID=${TRYON_MODEL_ID}
+      - TRYON_DEVICE=${TRYON_DEVICE}
+      - TRYON_WORKER_CONCURRENCY=${TRYON_WORKER_CONCURRENCY}
+      - SESSION_TTL_MINUTES=${SESSION_TTL_MINUTES}
+      - MAX_ASSET_LIFETIME_MINUTES=${MAX_ASSET_LIFETIME_MINUTES}
+      - MOCK_MODE=${MOCK_MODE}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      api:
+        condition: service_started
+    command: celery -A services.tryon.celery_app worker --loglevel=info --concurrency=${TRYON_WORKER_CONCURRENCY:-1}
+    volumes:
+      - ./apps:/app/apps
+      - ./packages:/app/packages
+      - ./services:/app/services
+    networks:
+      - trialroom
+
+  # ---------------------------------------------------------------
+  # Scheduler: Celery Beat (cleanup worker, every 5 minutes)
+  # ---------------------------------------------------------------
+  beat:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/api/Dockerfile
+    container_name: trialroom-beat
+    environment:
+      - CELERY_BROKER_URL=${CELERY_BROKER_URL}
+      - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    depends_on:
+      redis:
+        condition: service_healthy
+    command: celery -A services.tryon.celery_app beat --loglevel=info --schedule=/tmp/celerybeat-schedule
+    volumes:
+      - ./services:/app/services
+    networks:
+      - trialroom
+
+  # ---------------------------------------------------------------
+  # Demo Storefront: Next.js
+  # ---------------------------------------------------------------
+  demo-store:
+    build:
+      context: ./apps/demo-store
+      dockerfile: Dockerfile
+    container_name: trialroom-demo-store
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - NEXT_PUBLIC_MERCHANT_ID=merchant_demo
+    depends_on:
+      api:
+        condition: service_started
+    volumes:
+      - ./apps/demo-store:/app
+      - /app/node_modules
+    networks:
+      - trialroom
+
+networks:
+  trialroom:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:

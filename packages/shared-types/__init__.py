@@ -1,0 +1,1 @@
+# Shared typed contracts (Pydantic models + JSON Schema for TS consumers)

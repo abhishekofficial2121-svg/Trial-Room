@@ -1,0 +1,1 @@
+# Image validation service (Phase 3)

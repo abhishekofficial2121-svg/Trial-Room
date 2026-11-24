@@ -1,0 +1,1 @@
+# Widget/SDK source (TypeScript, bundled for framework-independent embed)

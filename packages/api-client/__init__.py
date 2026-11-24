@@ -1,0 +1,1 @@
+# Generated or hand-written TypeScript API client
