@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 
@@ -10,7 +10,7 @@ const PRODUCTS: Record<string, any> = {
     subcategory: "tshirt",
     color: "black",
     price: 29.99,
-    image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800&h=1000&fit=crop",
+    image: "/images/products/black-tshirt.jpg",
     variants: [
       { id: "variant_black_s", name: "Black — S" },
       { id: "variant_black_m", name: "Black — M" },
@@ -24,7 +24,7 @@ const PRODUCTS: Record<string, any> = {
     subcategory: "shirt",
     color: "white",
     price: 49.99,
-    image: "https://images.unsplash.com/photo-1596755094514-f87e3b47b1a4?w=800&h=1000&fit=crop",
+    image: "/images/products/white-shirt.jpg",
     variants: [
       { id: "variant_white_s", name: "White — S" },
       { id: "variant_white_m", name: "White — M" },
@@ -38,7 +38,7 @@ const PRODUCTS: Record<string, any> = {
     subcategory: "tshirt",
     color: "navy",
     price: 34.99,
-    image: "https://images.unsplash.com/photo-1585573704707-27222513e49a?w=800&h=1000&fit=crop",
+    image: "/images/products/navy-tshirt.jpg",
     variants: [
       { id: "variant_navy_m", name: "Navy — M" },
       { id: "variant_navy_l", name: "Navy — L" },
@@ -52,18 +52,6 @@ export default function ProductPage() {
   const product = PRODUCTS[id as string] || PRODUCTS.product_001;
   const [selectedVariant, setSelectedVariant] = useState(product.variants[0]);
   const [sessionId, setSessionId] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (sessionId) {
-      router.push(
-        `/try-on/${sessionId}?productId=${product.id}&productName=${encodeURIComponent(
-          product.name
-        )}&productColor=${product.color}&productImage=${encodeURIComponent(
-          product.image
-        )}`
-      );
-    }
-  }, [sessionId, router, product]);
 
   const handleTryOn = async () => {
     try {
