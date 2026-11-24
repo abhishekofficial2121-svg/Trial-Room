@@ -5,6 +5,7 @@ lifecycle events. All routes live under /api/v1.
 """
 
 import logging
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -16,16 +17,23 @@ from apps.api.app.api.v1 import health, sessions, upload, validate, generate, jo
 logging.basicConfig(level=getattr(logging, settings.LOG_LEVEL.upper(), logging.INFO))
 logger = logging.getLogger("trialroom")
 
-# Note: Base.metadata.create_all is intentionally NOT called here.
-# Alembic manages schema migrations (run `alembic upgrade head` on startup
-# via docker-compose, or manually in production). create_all would connect
-# to the database at import time, which fails when no DB is reachable.
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Application lifespan — replaces deprecated on_event handlers."""
+    logger.info("Trial Room API starting (env=%s, mock=%s)", settings.APP_ENV, settings.MOCK_MODE)
+    yield
+    logger.info("Trial Room API shutting down")
+    await engine.dispose()
+
+
 app = FastAPI(
     title="Trial Room API",
     description="Embeddable virtual try-on API for ecommerce (V1).",
     version="0.1.0",
     docs_url="/docs",
     openapi_url="/api/v1/openapi.json",
+    lifespan=lifespan,
 )
 
 # CORS — strict configuration per spec Section 10.
@@ -79,14 +87,3 @@ app.include_router(jobs.router, prefix=settings.API_PREFIX, tags=["jobs"])
 async def healthz():
     """Liveness probe for container orchestration."""
     return {"status": "ok"}
-
-
-@app.on_event("startup")
-async def on_startup():
-    logger.info("Trial Room API starting (env=%s, mock=%s)", settings.APP_ENV, settings.MOCK_MODE)
-
-
-@app.on_event("shutdown")
-async def on_shutdown():
-    logger.info("Trial Room API shutting down")
-    await engine.dispose()

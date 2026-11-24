@@ -4,6 +4,7 @@ All configuration comes from environment variables. Secrets are never
 hardcoded. See .env.example for the full list of supported variables.
 """
 
+from pydantic import ConfigDict
 from pydantic_settings import BaseSettings
 from typing import List
 
@@ -67,11 +68,12 @@ class Settings(BaseSettings):
     MOCK_MODE: bool = False
     ENABLE_CAMERA_UPLOAD: bool = True
 
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        case_sensitive = True
-        extra = "ignore"
+    model_config = ConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=True,
+        extra="ignore",
+    )
 
 
 settings = Settings()
