@@ -8,7 +8,7 @@ const products = [
     subcategory: "tshirt",
     color: "black",
     price: 29.99,
-    image: "/images/products/black-tshirt.jpg",
+    image: "https://placehold.co/600x800/000000/ffffff?text=Black+Oversized+T-Shirt",
   },
   {
     id: "product_002",
@@ -17,7 +17,7 @@ const products = [
     subcategory: "shirt",
     color: "white",
     price: 49.99,
-    image: "/images/products/white-shirt.jpg",
+    image: "https://placehold.co/600x800/ffffff/000000?text=White+Button-Down+Shirt",
   },
   {
     id: "product_003",
@@ -26,7 +26,7 @@ const products = [
     subcategory: "tshirt",
     color: "navy",
     price: 34.99,
-    image: "/images/products/navy-tshirt.jpg",
+    image: "https://placehold.co/600x800/000080/ffffff?text=Navy+Striped+T-Shirt",
   },
 ];
 
@@ -47,8 +47,16 @@ export default function Home() {
             key={product.id}
             className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition"
           >
-            <div className="h-48 bg-gray-100 flex items-center justify-center">
-              <span className="text-gray-400 text-sm">{product.color}</span>
+            <div className="h-64 relative">
+              <img
+                src={product.image}
+                alt={product.name}
+                className="w-full h-full object-cover"
+                loading="eager"
+              />
+              <span className="absolute top-2 left-2 bg-black/80 text-white text-xs px-2 py-1 rounded font-medium uppercase">
+                {product.color}
+              </span>
             </div>
             <div className="p-6">
               <h2 className="text-lg font-semibold">{product.name}</h2>

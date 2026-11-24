@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 
@@ -10,7 +10,7 @@ const PRODUCTS: Record<string, any> = {
     subcategory: "tshirt",
     color: "black",
     price: 29.99,
-    image: "/images/products/black-tshirt.jpg",
+    image: "https://placehold.co/600x800/000000/ffffff?text=Black+Oversized+T-Shirt",
     variants: [
       { id: "variant_black_s", name: "Black — S" },
       { id: "variant_black_m", name: "Black — M" },
@@ -24,7 +24,7 @@ const PRODUCTS: Record<string, any> = {
     subcategory: "shirt",
     color: "white",
     price: 49.99,
-    image: "/images/products/white-shirt.jpg",
+    image: "https://placehold.co/600x800/ffffff/000000?text=White+Button-Down+Shirt",
     variants: [
       { id: "variant_white_s", name: "White — S" },
       { id: "variant_white_m", name: "White — M" },
@@ -38,7 +38,7 @@ const PRODUCTS: Record<string, any> = {
     subcategory: "tshirt",
     color: "navy",
     price: 34.99,
-    image: "/images/products/navy-tshirt.jpg",
+    image: "https://placehold.co/600x800/000080/ffffff?text=Navy+Striped+T-Shirt",
     variants: [
       { id: "variant_navy_m", name: "Navy — M" },
       { id: "variant_navy_l", name: "Navy — L" },
@@ -52,6 +52,12 @@ export default function ProductPage() {
   const product = PRODUCTS[id as string] || PRODUCTS.product_001;
   const [selectedVariant, setSelectedVariant] = useState(product.variants[0]);
   const [sessionId, setSessionId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (sessionId) {
+      router.push(`/try-on/${sessionId}`);
+    }
+  }, [sessionId, router]);
 
   const handleTryOn = async () => {
     try {
@@ -67,6 +73,8 @@ export default function ProductPage() {
       const data = await res.json();
       if (data.session_id) {
         setSessionId(data.session_id);
+      } else {
+        alert("Failed to create session: " + (data.error?.message || "Unknown error"));
       }
     } catch (err) {
       console.error(err);
@@ -84,20 +92,30 @@ export default function ProductPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         <div className="lg:col-span-5">
-          <div className="h-80 bg-gray-100 rounded-xl flex items-center justify-center border border-gray-200 mb-4">
-            <span className="text-gray-400 text-sm">{product.color.toUpperCase()}</span>
+          <div className="relative">
+            <img
+              src={product.image}
+              alt={product.name}
+              className="w-full h-80 object-cover rounded-xl border border-gray-200"
+              loading="eager"
+            />
+            <span className="absolute top-3 left-3 bg-black/80 text-white text-xs px-2 py-1 rounded font-medium uppercase">
+              {product.color}
+            </span>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 mt-4">
             {product.variants.map((v: any) => (
               <button
                 key={v.id}
                 onClick={() => setSelectedVariant(v)}
-                className={`w-12 h-12 rounded-full border-2 ${
+                className={`w-12 h-12 rounded-full border-2 flex items-center justify-center ${
                   selectedVariant.id === v.id
                     ? "border-blue-600 bg-blue-50"
                     : "border-gray-300 bg-white"
                 }`}
-              />
+              >
+                <span className="text-[10px]">{v.name.split(" ").pop()}</span>
+              </button>
             ))}
           </div>
         </div>
